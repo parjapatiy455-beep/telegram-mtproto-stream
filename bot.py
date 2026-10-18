@@ -8,10 +8,16 @@ logger = logging.getLogger("telegram_bot")
 client = None
 bot_me = None
 
-def get_client() -> TelegramClient:
+def get_client():
     global client
+    if not Config.API_ID or not Config.API_HASH:
+        return None
     if client is None:
-        client = TelegramClient('stream_bot', Config.API_ID, Config.API_HASH)
+        try:
+            client = TelegramClient('stream_bot', Config.API_ID, Config.API_HASH)
+        except Exception as e:
+            logger.error(f"Error initializing TelegramClient: {e}")
+            return None
     return client
 
 async def start_client():
@@ -37,8 +43,12 @@ async def start_client():
 
 async def stop_client():
     global client, bot_me
-    if client and client.is_connected():
-        await client.disconnect()
+    if client:
+        try:
+            if client.is_connected():
+                await client.disconnect()
+        except Exception:
+            pass
     bot_me = None
 
 def human_readable_size(size_bytes: int) -> str:
