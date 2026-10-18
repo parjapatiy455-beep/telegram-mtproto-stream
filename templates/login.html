@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - MTProto Stream & Cloud</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .login-wrapper {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .login-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #2aabee, #229ed9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: #fff;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 4px 15px rgba(42, 171, 238, 0.35);
+        }
+        .login-card h2 {
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+        }
+        .login-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.8rem;
+        }
+        .form-group {
+            margin-bottom: 1.4rem;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+        .form-group input {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-main);
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus {
+            border-color: var(--accent);
+        }
+        .login-btn {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            justify-content: center;
+        }
+        .error-msg {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 1rem;
+            display: none;
+        }
+        .default-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+        }
+        .default-hint code {
+            color: var(--accent);
+            background: #21262d;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-icon">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h2>Admin Login</h2>
+            <p>Access and manage your MTProto Streaming Server & Storage Channel</p>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="password">Admin Password</label>
+                    <input type="password" id="password" placeholder="Enter admin password" required autofocus>
+                </div>
+                <button type="submit" class="btn btn-primary login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Login to Dashboard
+                </button>
+            </form>
+
+            <div id="error-msg" class="error-msg"></div>
+
+            <p class="default-hint">Default password is <code>admin123</code> (Change in Settings after login)</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error-msg');
+            errorDiv.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({password})
+                });
+
+                if (res.ok) {
+                    window.location.href = '/';
+                } else {
+                    const data = await res.json();
+                    errorDiv.innerText = data.detail || 'Invalid password';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.innerText = 'Network error while logging in';
+                errorDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
