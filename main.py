@@ -382,10 +382,18 @@ async def download_endpoint(request: Request, msg_id: int, file_name: str = ""):
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", Config.PORT))
+    port_str = (
+        os.environ.get("PORT") or 
+        os.environ.get("SERVER_PORT") or 
+        os.environ.get("APP_PORT") or 
+        str(Config.PORT or 8000)
+    )
+    port = int(port_str.strip())
+    print(f"[*] Starting Server on 0.0.0.0:{port}...")
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=port,
-        reload=False
+        proxy_headers=True,
+        forwarded_allow_ips="*"
     )
