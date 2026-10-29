@@ -1,4 +1,8 @@
+import os
+import re
 import logging
+import asyncio
+import urllib.parse
 from typing import AsyncGenerator
 from fastapi import Request, HTTPException, Response
 from fastapi.responses import StreamingResponse
@@ -9,6 +13,33 @@ from bot import human_readable_size
 logger = logging.getLogger("streamer")
 
 ALIGNMENT_BYTES = 4096  # Telegram MTProto offset must be a multiple of 4KB
+
+
+def format_content_disposition(disposition: str, file_name: str, msg_id: int, mime_type: str) -> str:
+    """
+    Format Content-Disposition safely for HTTP/1.1 and modern browsers (RFC 6266 / RFC 5987).
+    Standard HTTP headers strictly reject non-Latin-1 characters (such as Hindi or emojis).
+    We provide an ASCII safe fallback filename for older tools, and a UTF-8 percent-encoded
+    filename* parameter so browsers download with the exact original Unicode name.
+    """
+    # 1. ASCII fallback name
+    safe_ascii = re.sub(r'[^a-zA-Z0-9_\.-]', '_', file_name)
+    safe_ascii = re.sub(r'_+', '_', safe_ascii).strip('_.')
+
+    ext = os.path.splitext(file_name)[1]
+    if not ext:
+        ext = ".mp4" if (mime_type and mime_type.startswith("video/")) else ".dat"
+
+    if not safe_ascii:
+        safe_ascii = f"file_{msg_id}{ext}"
+    elif not safe_ascii.lower().endswith(ext.lower()):
+        safe_ascii = f"{safe_ascii}{ext}"
+
+    # 2. RFC 5987 UTF-8 encoded filename for modern browsers
+    encoded_name = urllib.parse.quote(file_name, encoding='utf-8')
+
+    return f"{disposition}; filename=\"{safe_ascii}\"; filename*=UTF-8''{encoded_name}"
+
 
 async def byte_range_generator(
     client: TelegramClient,
@@ -55,9 +86,13 @@ async def byte_range_generator(
 
             if bytes_sent >= total_needed:
                 break
+    except (asyncio.CancelledError, ConnectionResetError):
+        # Client closed tab or scrubbed playback
+        return
     except Exception as e:
         logger.error(f"Error streaming from MTProto: {e}")
         raise
+
 
 async def stream_telegram_file(
     request: Request,
@@ -84,6 +119,7 @@ async def stream_telegram_file(
 
     # Default disposition
     disposition = "attachment" if as_attachment else "inline"
+    content_disposition = format_content_disposition(disposition, file_name, msg_id, mime_type)
 
     range_header = request.headers.get("range", "").strip()
 
@@ -93,8 +129,14 @@ async def stream_telegram_file(
         parts = range_value.split("-")
 
         try:
-            start = int(parts[0]) if parts[0] else 0
-            end = int(parts[1]) if len(parts) > 1 and parts[1] else file_size - 1
+            if not parts[0]:
+                # Suffix range: bytes=-500 (last 500 bytes)
+                suffix_length = int(parts[1])
+                start = max(0, file_size - suffix_length)
+                end = file_size - 1
+            else:
+                start = int(parts[0])
+                end = int(parts[1]) if len(parts) > 1 and parts[1] else file_size - 1
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid Range header")
 
@@ -112,7 +154,7 @@ async def stream_telegram_file(
             "Accept-Ranges": "bytes",
             "Content-Length": str(content_length),
             "Content-Type": mime_type,
-            "Content-Disposition": f'{disposition}; filename="{file_name}"',
+            "Content-Disposition": content_disposition,
             "Access-Control-Allow-Origin": "*",
             "Cache-Control": "max-age=3600, public",
         }
@@ -129,7 +171,7 @@ async def stream_telegram_file(
             "Accept-Ranges": "bytes",
             "Content-Length": str(file_size),
             "Content-Type": mime_type,
-            "Content-Disposition": f'{disposition}; filename="{file_name}"',
+            "Content-Disposition": content_disposition,
             "Access-Control-Allow-Origin": "*",
             "Cache-Control": "max-age=3600, public",
         }

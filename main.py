@@ -5,6 +5,7 @@ import shutil
 import hashlib
 import logging
 import platform
+import urllib.parse
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, UploadFile, File, HTTPException, Response, Depends, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -270,9 +271,10 @@ async def upload_file_api(file: UploadFile = File(...)):
         file_name = file.filename
         file_size = os.path.getsize(file_path)
 
+        encoded_name = urllib.parse.quote(file_name)
         watch_url = f"{Config.BASE_URL}/watch/{msg_id}"
-        stream_url = f"{Config.BASE_URL}/stream/{msg_id}/{file_name}"
-        download_url = f"{Config.BASE_URL}/download/{msg_id}/{file_name}"
+        stream_url = f"{Config.BASE_URL}/stream/{msg_id}/{encoded_name}"
+        download_url = f"{Config.BASE_URL}/download/{msg_id}/{encoded_name}"
         embed_url = f"{Config.BASE_URL}/embed/{msg_id}"
 
         # Save to persistent database
@@ -330,8 +332,9 @@ async def watch_page(request: Request, msg_id: int):
     file_size = msg.file.size or 0
     mime_type = msg.file.mime_type or "video/mp4"
 
-    stream_url = f"{Config.BASE_URL}/stream/{msg_id}/{file_name}"
-    download_url = f"{Config.BASE_URL}/download/{msg_id}/{file_name}"
+    encoded_name = urllib.parse.quote(file_name)
+    stream_url = f"{Config.BASE_URL}/stream/{msg_id}/{encoded_name}"
+    download_url = f"{Config.BASE_URL}/download/{msg_id}/{encoded_name}"
     embed_url = f"{Config.BASE_URL}/embed/{msg_id}"
 
     return templates.TemplateResponse(
@@ -364,7 +367,8 @@ async def embed_page(request: Request, msg_id: int):
 
     file_name = msg.file.name or f"video_{msg_id}.mp4"
     mime_type = msg.file.mime_type or "video/mp4"
-    stream_url = f"{Config.BASE_URL}/stream/{msg_id}/{file_name}"
+    encoded_name = urllib.parse.quote(file_name)
+    stream_url = f"{Config.BASE_URL}/stream/{msg_id}/{encoded_name}"
 
     return templates.TemplateResponse(
         request=request,
@@ -378,7 +382,7 @@ async def embed_page(request: Request, msg_id: int):
 
 
 @app.get("/stream/{msg_id}")
-@app.get("/stream/{msg_id}/{file_name}")
+@app.get("/stream/{msg_id}/{file_name:path}")
 async def stream_endpoint(request: Request, msg_id: int, file_name: str = ""):
     tg_client = get_client()
     if not tg_client or not tg_client.is_connected():
@@ -388,7 +392,7 @@ async def stream_endpoint(request: Request, msg_id: int, file_name: str = ""):
 
 
 @app.get("/download/{msg_id}")
-@app.get("/download/{msg_id}/{file_name}")
+@app.get("/download/{msg_id}/{file_name:path}")
 async def download_endpoint(request: Request, msg_id: int, file_name: str = ""):
     tg_client = get_client()
     if not tg_client or not tg_client.is_connected():

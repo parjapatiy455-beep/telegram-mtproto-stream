@@ -1,4 +1,5 @@
 import logging
+import urllib.parse
 from datetime import datetime
 from telethon import TelegramClient, events, types, Button
 from config import Config
@@ -107,9 +108,10 @@ def setup_bot_handlers(tg_client: TelegramClient):
                 mime_type = saved_msg.file.mime_type or "application/octet-stream"
 
             # Construct URLs
+            encoded_name = urllib.parse.quote(file_name)
             watch_url = f"{Config.BASE_URL}/watch/{saved_msg.id}"
-            stream_url = f"{Config.BASE_URL}/stream/{saved_msg.id}/{file_name}"
-            download_url = f"{Config.BASE_URL}/download/{saved_msg.id}/{file_name}"
+            stream_url = f"{Config.BASE_URL}/stream/{saved_msg.id}/{encoded_name}"
+            download_url = f"{Config.BASE_URL}/download/{saved_msg.id}/{encoded_name}"
             embed_url = f"{Config.BASE_URL}/embed/{saved_msg.id}"
 
             # Save to persistent files DB
@@ -173,6 +175,7 @@ async def get_channel_files(limit: int = 50):
                         f_size = msg.file.size or 0
                         m_type = msg.file.mime_type or "application/octet-stream"
                         d_str = msg.date.strftime("%Y-%m-%d %H:%M:%S") if msg.date else ""
+                        encoded_f_name = urllib.parse.quote(f_name)
                         rec = {
                             "id": msg.id,
                             "name": f_name,
@@ -181,9 +184,9 @@ async def get_channel_files(limit: int = 50):
                             "mime_type": m_type,
                             "date": d_str,
                             "is_video": m_type.startswith("video/"),
-                            "stream_url": f"{Config.BASE_URL}/stream/{msg.id}/{f_name}",
+                            "stream_url": f"{Config.BASE_URL}/stream/{msg.id}/{encoded_f_name}",
                             "watch_url": f"{Config.BASE_URL}/watch/{msg.id}",
-                            "download_url": f"{Config.BASE_URL}/download/{msg.id}/{f_name}",
+                            "download_url": f"{Config.BASE_URL}/download/{msg.id}/{encoded_f_name}",
                             "embed_url": f"{Config.BASE_URL}/embed/{msg.id}"
                         }
                         files_map[msg.id] = rec
