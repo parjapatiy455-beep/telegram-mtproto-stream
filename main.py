@@ -15,6 +15,7 @@ import uvicorn
 
 from config import Config
 from bot import get_client, start_client, stop_client, get_channel_files, delete_channel_file, human_readable_size
+from db import save_file_record
 import bot as bot_module
 from streamer import stream_telegram_file
 
@@ -273,6 +274,21 @@ async def upload_file_api(file: UploadFile = File(...)):
         stream_url = f"{Config.BASE_URL}/stream/{msg_id}/{file_name}"
         download_url = f"{Config.BASE_URL}/download/{msg_id}/{file_name}"
         embed_url = f"{Config.BASE_URL}/embed/{msg_id}"
+
+        # Save to persistent database
+        save_file_record(msg_id, {
+            "id": msg_id,
+            "name": file_name,
+            "size": file_size,
+            "size_human": human_readable_size(file_size),
+            "mime_type": sent_msg.file.mime_type if sent_msg.file else "application/octet-stream",
+            "date": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "is_video": (sent_msg.file.mime_type or "").startswith("video/"),
+            "stream_url": stream_url,
+            "watch_url": watch_url,
+            "download_url": download_url,
+            "embed_url": embed_url
+        })
 
         return {
             "success": True,

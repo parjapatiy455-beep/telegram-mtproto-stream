@@ -4,8 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Telegram MTProto Stream & Cloud Dashboard</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/style.css?v=3.2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        a, a:visited, a:hover, a:active {
+            text-decoration: none !important;
+            color: inherit !important;
+        }
+        .logo-area, .logo-area:visited, .logo-area:hover, .logo-area:active {
+            text-decoration: none !important;
+            color: inherit !important;
+        }
+        .header-title h1 {
+            color: #ffffff !important;
+            text-decoration: none !important;
+            background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
 </head>
 <body>
     <div id="toast-container" class="toast-container"></div>
@@ -322,7 +339,7 @@
         </footer>
     </div>
 
-    <script src="/static/script.js"></script>
+    <script src="/static/script.js?v=3.2"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             checkStatus();

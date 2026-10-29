@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from telethon import TelegramClient, events, types, Button
 from config import Config
+from db import load_files_db, save_file_record, delete_file_record
 
 logger = logging.getLogger("telegram_bot")
 
@@ -111,6 +112,21 @@ def setup_bot_handlers(tg_client: TelegramClient):
             download_url = f"{Config.BASE_URL}/download/{saved_msg.id}/{file_name}"
             embed_url = f"{Config.BASE_URL}/embed/{saved_msg.id}"
 
+            # Save to persistent files DB
+            save_file_record(saved_msg.id, {
+                "id": saved_msg.id,
+                "name": file_name,
+                "size": file_size,
+                "size_human": human_readable_size(file_size),
+                "mime_type": mime_type,
+                "date": saved_msg.date.strftime("%Y-%m-%d %H:%M:%S") if saved_msg.date else "",
+                "is_video": mime_type.startswith("video/"),
+                "stream_url": stream_url,
+                "watch_url": watch_url,
+                "download_url": download_url,
+                "embed_url": embed_url
+            })
+
             reply_text = (
                 f"✅ **File Successfully Stored!**\n\n"
                 f"📁 **Name:** `{file_name}`\n"
@@ -136,44 +152,56 @@ def setup_bot_handlers(tg_client: TelegramClient):
 
 async def get_channel_files(limit: int = 50):
     tg_client = get_client()
-    if not tg_client or not tg_client.is_connected():
-        return []
+    db_records = load_files_db()
+    files_map = {int(k): v for k, v in db_records.items()}
 
-    try:
-        messages = await tg_client.get_messages(Config.BIN_CHANNEL, limit=limit)
-        files = []
-        for msg in messages:
-            if msg and msg.file:
-                file_name = msg.file.name or f"file_{msg.id}.dat"
-                file_size = msg.file.size or 0
-                mime_type = msg.file.mime_type or "application/octet-stream"
-                date_str = msg.date.strftime("%Y-%m-%d %H:%M:%S") if msg.date else ""
+    # Scan and discover recent Telegram channel messages by ID
+    if tg_client and tg_client.is_connected() and Config.BIN_CHANNEL:
+        try:
+            highest_id = max(files_map.keys()) if files_map else 1
+            # Scan a healthy range of recent IDs to discover existing files
+            search_ids = list(range(1, max(highest_id + 10, 30)))
+            missing_ids = [mid for mid in search_ids if mid not in files_map]
 
-                files.append({
-                    "id": msg.id,
-                    "name": file_name,
-                    "size": file_size,
-                    "size_human": human_readable_size(file_size),
-                    "mime_type": mime_type,
-                    "date": date_str,
-                    "is_video": mime_type.startswith("video/"),
-                    "stream_url": f"{Config.BASE_URL}/stream/{msg.id}/{file_name}",
-                    "watch_url": f"{Config.BASE_URL}/watch/{msg.id}",
-                    "download_url": f"{Config.BASE_URL}/download/{msg.id}/{file_name}",
-                    "embed_url": f"{Config.BASE_URL}/embed/{msg.id}"
-                })
-        return files
-    except Exception as e:
-        logger.error(f"Error getting channel files: {e}")
-        return []
+            if missing_ids:
+                msgs = await tg_client.get_messages(Config.BIN_CHANNEL, ids=missing_ids)
+                if not isinstance(msgs, list):
+                    msgs = [msgs]
+                for msg in msgs:
+                    if msg and msg.file:
+                        f_name = msg.file.name or f"file_{msg.id}.dat"
+                        f_size = msg.file.size or 0
+                        m_type = msg.file.mime_type or "application/octet-stream"
+                        d_str = msg.date.strftime("%Y-%m-%d %H:%M:%S") if msg.date else ""
+                        rec = {
+                            "id": msg.id,
+                            "name": f_name,
+                            "size": f_size,
+                            "size_human": human_readable_size(f_size),
+                            "mime_type": m_type,
+                            "date": d_str,
+                            "is_video": m_type.startswith("video/"),
+                            "stream_url": f"{Config.BASE_URL}/stream/{msg.id}/{f_name}",
+                            "watch_url": f"{Config.BASE_URL}/watch/{msg.id}",
+                            "download_url": f"{Config.BASE_URL}/download/{msg.id}/{f_name}",
+                            "embed_url": f"{Config.BASE_URL}/embed/{msg.id}"
+                        }
+                        files_map[msg.id] = rec
+                        save_file_record(msg.id, rec)
+        except Exception as e:
+            logger.error(f"Error scanning channel files: {e}", exc_info=True)
+
+    sorted_files = sorted(files_map.values(), key=lambda x: x.get("id", 0), reverse=True)
+    return sorted_files[:limit]
 
 async def delete_channel_file(msg_id: int) -> bool:
+    delete_file_record(msg_id)
     tg_client = get_client()
     if not tg_client or not tg_client.is_connected():
-        return False
+        return True
     try:
         await tg_client.delete_messages(Config.BIN_CHANNEL, [msg_id])
         return True
     except Exception as e:
         logger.error(f"Error deleting message {msg_id}: {e}")
-        return False
+        return True
