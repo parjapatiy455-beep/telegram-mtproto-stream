@@ -2,132 +2,157 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Telegram MTProto Stream & Cloud Dashboard</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
+    <div id="toast-container" class="toast-container"></div>
+
     <div class="container">
-        <!-- Header -->
+        <!-- Top App Bar / Header -->
         <header class="header">
-            <div class="logo-area">
+            <a href="/" class="logo-area">
                 <div class="logo-icon">
                     <i class="fab fa-telegram-plane"></i>
                 </div>
-                <div>
-                    <h1>MTProto Stream & Cloud</h1>
-                    <p class="subtitle">Stream videos & manage files powered by Telegram Cloud</p>
+                <div class="header-title">
+                    <h1>MTProto Cloud</h1>
+                    <p class="subtitle">High-Speed Video Streaming & Unlimited Storage</p>
                 </div>
-            </div>
+            </a>
             
             <div class="header-right">
                 <div class="status-badge" id="server-status">
                     <span class="status-dot"></span>
-                    <span id="status-text">Checking...</span>
+                    <span id="status-text">Checking</span>
                 </div>
                 {% if is_admin %}
                 <button onclick="handleLogout()" class="btn btn-secondary btn-sm" title="Log out">
-                    <i class="fas fa-sign-out-alt"></i> Logout
+                    <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
                 </button>
                 {% else %}
                 <a href="/login" class="btn btn-primary btn-sm">
-                    <i class="fas fa-lock"></i> Admin Login
+                    <i class="fas fa-lock"></i> <span>Login</span>
                 </a>
                 {% endif %}
             </div>
         </header>
 
-        <!-- Dashboard Navigation Tabs -->
-        <div class="tabs-nav">
+        <!-- Segmented Tab Bar -->
+        <nav class="tabs-nav" aria-label="Dashboard navigation">
             <button class="tab-btn active" onclick="switchTab('tab-files')">
-                <i class="fas fa-folder-open"></i> File Explorer
+                <i class="fas fa-folder-open"></i> <span>Explorer</span>
             </button>
             <button class="tab-btn" onclick="switchTab('tab-upload')">
-                <i class="fas fa-cloud-upload-alt"></i> Upload File
+                <i class="fas fa-cloud-upload-alt"></i> <span>Upload</span>
             </button>
             <button class="tab-btn" onclick="switchTab('tab-tester')">
-                <i class="fas fa-play-circle"></i> Quick Stream
+                <i class="fas fa-play-circle"></i> <span>Stream</span>
             </button>
             {% if is_admin %}
             <button class="tab-btn" onclick="switchTab('tab-settings')">
-                <i class="fas fa-cog"></i> Settings & Credentials
+                <i class="fas fa-sliders-h"></i> <span>Settings</span>
             </button>
             <button class="tab-btn" onclick="switchTab('tab-stats')">
-                <i class="fas fa-chart-line"></i> Server Stats
+                <i class="fas fa-chart-line"></i> <span>Stats</span>
             </button>
             {% endif %}
-        </div>
+        </nav>
 
         <!-- ========================================== -->
         <!-- TAB 1: File Explorer / Channel Files       -->
         <!-- ========================================== -->
-        <div id="tab-files" class="tab-content active">
+        <section id="tab-files" class="tab-content active">
             <div class="card">
                 <div class="card-header-flex">
                     <div>
-                        <h2><i class="fas fa-folder-open"></i> Stored Files in Telegram</h2>
-                        <p class="description">Browse and stream videos and files stored in your Telegram Storage Channel.</p>
+                        <h2><i class="fas fa-folder-open"></i> Cloud Files</h2>
+                        <p class="description">Browse, stream, and manage media saved in your Telegram channel.</p>
                     </div>
                     <div class="filter-actions">
-                        <input type="text" id="file-search" placeholder="Search file by name..." class="search-input" onkeyup="filterFiles()">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="file-search" placeholder="Search files..." class="search-input" onkeyup="filterFiles()" autocomplete="off">
+                        </div>
                         <button onclick="loadChannelFiles()" class="btn btn-secondary btn-sm" title="Refresh files">
-                            <i class="fas fa-sync-alt"></i> Refresh
+                            <i class="fas fa-sync-alt"></i>
                         </button>
                     </div>
                 </div>
 
-                <div class="table-responsive">
-                    <table class="files-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Size</th>
-                                <th>Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="files-tbody">
-                            <tr>
-                                <td colspan="4" class="text-center">Loading files from Telegram...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <!-- Desktop Table View (>= 768px) -->
+                <div class="desktop-files-view">
+                    <div class="table-responsive">
+                        <table class="files-table">
+                            <thead>
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Size</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="files-tbody">
+                                <tr>
+                                    <td colspan="4" class="text-center" style="padding: 2rem;">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Mobile Card View (< 768px) -->
+                <div class="mobile-files-view">
+                    <div id="mobile-files-grid" class="mobile-files-grid">
+                        <div class="text-center" style="padding: 2rem; color: var(--text-muted);">
+                            <i class="fas fa-spinner fa-spin"></i> Loading...
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- ========================================== -->
         <!-- TAB 2: Web Uploader                       -->
         <!-- ========================================== -->
-        <div id="tab-upload" class="tab-content">
-            <div class="card uploader-card">
-                <h2><i class="fas fa-cloud-upload-alt"></i> Upload File to Telegram Cloud</h2>
-                <p class="description">Upload video or file directly to your Storage Channel. You will get instant stream and download links.</p>
+        <section id="tab-upload" class="tab-content">
+            <div class="card">
+                <h2><i class="fas fa-cloud-upload-alt"></i> Fast Upload to Telegram</h2>
+                <p class="description">Upload video or documents directly. Instant streaming & direct download links will be generated.</p>
 
-                <div class="dropzone" id="dropzone">
-                    <i class="fas fa-file-video drop-icon"></i>
-                    <h3>Drag & Drop video or file here</h3>
-                    <p>or</p>
-                    <label for="file-input" class="btn btn-secondary">Browse File</label>
+                <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+                    <div class="drop-icon-wrapper">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h3>Tap or Drag files here</h3>
+                    <p>Select any video, audio, or document to upload</p>
+                    <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 0.5rem; pointer-events: none;">
+                        <i class="fas fa-folder-open"></i> Browse Files
+                    </button>
                     <input type="file" id="file-input" hidden>
-                    <p class="file-hint">Supports MP4, MKV, WebM, MP3, PDF, ZIP and more</p>
+                    <p class="file-hint">Supports MP4, MKV, WebM, AVI, MP3, ZIP, PDF and more</p>
                 </div>
 
                 <div class="upload-progress-container" id="progress-container" style="display: none;">
                     <div class="progress-info">
-                        <span id="upload-filename">Uploading...</span>
-                        <span id="upload-percent">0%</span>
+                        <span id="upload-filename" style="font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 75%;">Uploading...</span>
+                        <span id="upload-percent" style="color: var(--accent); font-weight: 700;">0%</span>
                     </div>
                     <div class="progress-bar-bg">
                         <div class="progress-bar-fill" id="progress-bar"></div>
                     </div>
-                    <p class="upload-status-text" id="upload-status-text">Uploading to server...</p>
+                    <p class="upload-status-text" id="upload-status-text">
+                        <i class="fas fa-spinner fa-spin"></i> Uploading to server...
+                    </p>
                 </div>
 
                 <!-- Result Card -->
                 <div class="result-box" id="result-box" style="display: none;">
-                    <h3><i class="fas fa-check-circle success-icon"></i> Upload Successful!</h3>
+                    <h3><i class="fas fa-check-circle"></i> File Successfully Stored!</h3>
                     
                     <div class="link-group">
                         <label>Watch / Player Page:</label>
@@ -162,26 +187,26 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- ========================================== -->
         <!-- TAB 3: Quick Stream & Instructions         -->
         <!-- ========================================== -->
-        <div id="tab-tester" class="tab-content">
+        <section id="tab-tester" class="tab-content">
             <div class="main-grid">
                 <div class="card">
                     <h2><i class="fas fa-play-circle"></i> Quick Video Stream</h2>
-                    <p class="description">Enter the Telegram message ID to stream or watch instantly.</p>
-                    <div class="lookup-group">
-                        <input type="number" id="quick-msg-id" placeholder="Enter Message ID (e.g. 124)">
-                        <button onclick="openQuickStream()" class="btn btn-primary"><i class="fas fa-external-link-alt"></i> Stream</button>
+                    <p class="description">Enter any Telegram message ID to stream or watch in the player instantly.</p>
+                    <div class="lookup-group" style="margin-top: 1rem;">
+                        <input type="number" id="quick-msg-id" placeholder="Message ID (e.g. 142)" inputmode="numeric">
+                        <button onclick="openQuickStream()" class="btn btn-primary"><i class="fas fa-play"></i> Stream</button>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h2><i class="fas fa-code"></i> How to Stream on Any Website</h2>
-                    <p class="description">Use standard HTML5 video tag or iframe embed in your website:</p>
-                    <div class="code-block">
+                    <h2><i class="fas fa-code"></i> Website Embed Guide</h2>
+                    <p class="description">Embed video stream into any WordPress, HTML, React, or mobile app:</p>
+                    <div class="code-block" style="margin-top: 1rem;">
                         <pre><code>&lt;!-- Option 1: Responsive Iframe --&gt;
 &lt;iframe 
   src="{{ base_url }}/embed/123" 
@@ -192,37 +217,37 @@
 &lt;/iframe&gt;
 
 &lt;!-- Option 2: HTML5 Video Tag --&gt;
-&lt;video controls width="100%"&gt;
+&lt;video controls width="100%" preload="metadata"&gt;
   &lt;source src="{{ base_url }}/stream/123/video.mp4" type="video/mp4"&gt;
 &lt;/video&gt;</code></pre>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
         {% if is_admin %}
         <!-- ========================================== -->
         <!-- TAB 4: Settings & Credentials Manager      -->
         <!-- ========================================== -->
-        <div id="tab-settings" class="tab-content">
+        <section id="tab-settings" class="tab-content">
             <div class="card">
-                <h2><i class="fas fa-sliders-h"></i> Telegram & Server Settings</h2>
-                <p class="description">Manage your credentials directly from this web panel without touching the server files!</p>
+                <h2><i class="fas fa-sliders-h"></i> MTProto & Server Settings</h2>
+                <p class="description">Update your credentials on the fly without accessing server terminal or SSH.</p>
 
-                <form id="settings-form" onsubmit="handleSaveSettings(event)">
+                <form id="settings-form" onsubmit="handleSaveSettings(event)" style="margin-top: 1.25rem;">
                     <div class="settings-grid">
                         <div class="form-group">
                             <label>API ID (from my.telegram.org):</label>
-                            <input type="text" id="set-api-id" placeholder="e.g. 12345678" required>
+                            <input type="text" id="set-api-id" placeholder="e.g. 12345678" inputmode="numeric" required>
                         </div>
                         <div class="form-group">
                             <label>API Hash (from my.telegram.org):</label>
-                            <input type="text" id="set-api-hash" placeholder="Enter new API Hash to update">
+                            <input type="text" id="set-api-hash" placeholder="Enter new API Hash to change" autocomplete="off">
                             <small class="hint" id="current-api-hash-hint"></small>
                         </div>
                         <div class="form-group">
                             <label>Bot Token (from @BotFather):</label>
-                            <input type="text" id="set-bot-token" placeholder="Enter new Bot Token to update">
+                            <input type="text" id="set-bot-token" placeholder="Enter new Bot Token to change" autocomplete="off">
                             <small class="hint" id="current-bot-token-hint"></small>
                         </div>
                         <div class="form-group">
@@ -231,40 +256,40 @@
                         </div>
                         <div class="form-group">
                             <label>Public Base URL (e.g. https://your-domain.com):</label>
-                            <input type="text" id="set-base-url" placeholder="http://localhost:8000" required>
+                            <input type="url" id="set-base-url" placeholder="http://localhost:8000" required>
                         </div>
                         <div class="form-group">
                             <label>Change Admin Password:</label>
-                            <input type="password" id="set-admin-password" placeholder="Leave empty to keep unchanged">
+                            <input type="password" id="set-admin-password" placeholder="Leave blank to keep current">
                         </div>
                     </div>
 
                     <div class="settings-actions">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Save Settings & Connect MTProto
+                            <i class="fas fa-save"></i> Save & Connect MTProto
                         </button>
                         <button type="button" onclick="handleReconnect()" class="btn btn-secondary">
-                            <i class="fas fa-redo"></i> Test & Reconnect
+                            <i class="fas fa-redo"></i> Test Connection
                         </button>
                     </div>
 
                     <div id="settings-msg" class="alert-box" style="display: none;"></div>
                 </form>
             </div>
-        </div>
+        </section>
 
         <!-- ========================================== -->
         <!-- TAB 5: Server Health & Stats               -->
         <!-- ========================================== -->
-        <div id="tab-stats" class="tab-content">
+        <section id="tab-stats" class="tab-content">
             <div class="card">
-                <h2><i class="fas fa-tachometer-alt"></i> Server System & Bot Statistics</h2>
-                <p class="description">Live operational metrics of your MTProto server.</p>
+                <h2><i class="fas fa-chart-line"></i> System & Bot Diagnostics</h2>
+                <p class="description">Live operational metrics and uptime indicators.</p>
 
-                <div class="stats-grid" id="stats-container">
+                <div class="stats-grid" id="stats-container" style="margin-top: 1.25rem;">
                     <div class="stat-card">
                         <div class="stat-label">Bot Status</div>
-                        <div class="stat-value" id="stat-bot-status">Checking...</div>
+                        <div class="stat-value" id="stat-bot-status"><i class="fas fa-spinner fa-spin"></i></div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Bot Username</div>
@@ -283,23 +308,22 @@
                         <div class="stat-value" id="stat-os">-</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Channel ID</div>
+                        <div class="stat-label">Storage Channel</div>
                         <div class="stat-value" id="stat-channel">-</div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
         {% endif %}
 
         <!-- Footer -->
         <footer class="footer">
-            <p>Telegram MTProto High-Speed Streaming & Cloud Storage Server</p>
+            <p>Telegram MTProto High-Speed Streaming & Storage Server &bull; Mobile & Desktop Ready</p>
         </footer>
     </div>
 
     <script src="/static/script.js"></script>
     <script>
-        // Check initial status on load
         window.addEventListener('DOMContentLoaded', () => {
             checkStatus();
             loadChannelFiles();

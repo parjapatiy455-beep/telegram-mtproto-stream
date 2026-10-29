@@ -2,129 +2,159 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Admin Login - MTProto Stream & Cloud</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         .login-wrapper {
-            min-height: 80vh;
+            min-height: 85vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 1.25rem;
         }
         .login-card {
             width: 100%;
-            max-width: 420px;
-            background: var(--card-bg);
+            max-width: 400px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 2.5rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: var(--radius-lg);
+            padding: 2.2rem 1.8rem;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
             text-align: center;
+            position: relative;
         }
         .login-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #2aabee, #229ed9);
-            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             color: #fff;
-            margin: 0 auto 1.5rem;
-            box-shadow: 0 4px 15px rgba(42, 171, 238, 0.35);
+            margin: 0 auto 1.25rem;
+            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.35);
         }
         .login-card h2 {
-            font-size: 1.4rem;
-            margin-bottom: 0.5rem;
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 0.35rem;
+            color: #fff;
         }
         .login-card p {
             color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-bottom: 1.8rem;
+            font-size: 0.84rem;
+            margin-bottom: 1.6rem;
+            line-height: 1.45;
         }
-        .form-group {
-            margin-bottom: 1.4rem;
-            text-align: left;
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
         }
-        .form-group label {
-            display: block;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 0.4rem;
-        }
-        .form-group input {
+        .input-wrapper input {
             width: 100%;
-            background: #0d1117;
+            background: rgba(11, 16, 28, 0.85);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border-radius: 10px;
             color: var(--text-main);
-            padding: 0.75rem 1rem;
-            font-size: 0.95rem;
+            padding: 0.75rem 2.6rem 0.75rem 1rem;
+            font-size: 1rem; /* 16px prevents iOS auto-zoom */
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 0.2s ease;
         }
-        .form-group input:focus {
+        .input-wrapper input:focus {
             border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+        }
+        .toggle-password {
+            position: absolute;
+            right: 0.85rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            padding: 0.3rem;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+        .toggle-password:hover {
+            color: var(--text-main);
         }
         .login-btn {
             width: 100%;
             padding: 0.75rem;
-            font-size: 1rem;
-            justify-content: center;
-        }
-        .error-msg {
-            color: var(--danger);
-            font-size: 0.85rem;
-            margin-top: 1rem;
-            display: none;
+            font-size: 0.95rem;
+            margin-top: 1.25rem;
+            border-radius: 10px;
         }
         .default-hint {
-            font-size: 0.8rem;
-            color: var(--text-muted);
+            font-size: 0.78rem;
+            color: var(--text-dim);
             margin-top: 1.5rem;
+            line-height: 1.5;
         }
         .default-hint code {
-            color: var(--accent);
-            background: #21262d;
-            padding: 0.1rem 0.4rem;
+            color: #38bdf8;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 0.15rem 0.45rem;
             border-radius: 4px;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
+    <div id="toast-container" class="toast-container"></div>
+
     <div class="login-wrapper">
         <div class="login-card">
             <div class="login-icon">
-                <i class="fas fa-lock"></i>
+                <i class="fas fa-shield-alt"></i>
             </div>
             <h2>Admin Login</h2>
-            <p>Access and manage your MTProto Streaming Server & Storage Channel</p>
+            <p>Access your MTProto Cloud dashboard to manage streaming, credentials and files.</p>
 
             <form id="login-form">
-                <div class="form-group">
-                    <label for="password">Admin Password</label>
-                    <input type="password" id="password" placeholder="Enter admin password" required autofocus>
+                <div class="form-group" style="text-align: left;">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" placeholder="Enter admin password" required autofocus autocomplete="current-password">
+                        <i class="fas fa-eye toggle-password" id="toggle-pwd" onclick="togglePasswordVisibility()"></i>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary login-btn">
-                    <i class="fas fa-sign-in-alt"></i> Login to Dashboard
+                <button type="submit" class="btn btn-primary login-btn" id="submit-btn">
+                    <span>Login to Dashboard</span> <i class="fas fa-arrow-right"></i>
                 </button>
             </form>
 
-            <div id="error-msg" class="error-msg"></div>
-
-            <p class="default-hint">Default password is <code>admin123</code> (Change in Settings after login)</p>
+            <p class="default-hint">Default password is <code>admin123</code><br>Can be changed in dashboard settings.</p>
         </div>
     </div>
 
+    <script src="/static/script.js"></script>
     <script>
+        function togglePasswordVisibility() {
+            const pwdInput = document.getElementById('password');
+            const icon = document.getElementById('toggle-pwd');
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                icon.className = 'fas fa-eye-slash toggle-password';
+            } else {
+                pwdInput.type = 'password';
+                icon.className = 'fas fa-eye toggle-password';
+            }
+        }
+
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('error-msg');
-            errorDiv.style.display = 'none';
+            const btn = document.getElementById('submit-btn');
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+            btn.disabled = true;
 
             try {
                 const res = await fetch('/api/login', {
@@ -134,15 +164,20 @@
                 });
 
                 if (res.ok) {
-                    window.location.href = '/';
+                    showToast('Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 500);
                 } else {
                     const data = await res.json();
-                    errorDiv.innerText = data.detail || 'Invalid password';
-                    errorDiv.style.display = 'block';
+                    showToast(data.detail || 'Invalid password', 'error');
+                    btn.innerHTML = '<span>Login to Dashboard</span> <i class="fas fa-arrow-right"></i>';
+                    btn.disabled = false;
                 }
             } catch (err) {
-                errorDiv.innerText = 'Network error while logging in';
-                errorDiv.style.display = 'block';
+                showToast('Network error while logging in', 'error');
+                btn.innerHTML = '<span>Login to Dashboard</span> <i class="fas fa-arrow-right"></i>';
+                btn.disabled = false;
             }
         });
     </script>

@@ -2,23 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>{{ file_name }} - MTProto Video Stream</title>
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body class="player-body">
+    <div id="toast-container" class="toast-container"></div>
+
     <div class="player-container">
         <!-- Top Navigation -->
-        <div class="player-header">
-            <a href="/" class="btn-back"><i class="fas fa-arrow-left"></i> Home</a>
+        <header class="player-header">
+            <a href="/" class="btn-back">
+                <i class="fas fa-arrow-left"></i> <span>Dashboard</span>
+            </a>
             <div class="file-title-area">
                 <h1 class="player-title" title="{{ file_name }}">{{ file_name }}</h1>
                 <span class="file-meta-pill">{{ file_size_human }} &bull; {{ mime_type }}</span>
             </div>
-            <a href="{{ download_url }}" class="btn btn-secondary btn-sm"><i class="fas fa-download"></i> Download</a>
-        </div>
+            <a href="{{ download_url }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-download"></i> <span>Download</span>
+            </a>
+        </header>
 
         <!-- Video Player Wrapper -->
         <div class="video-wrapper">
@@ -28,24 +34,32 @@
             </video>
         </div>
 
-        <!-- Video Actions & Links -->
+        <!-- Video Actions & Links Card -->
         <div class="player-details-card">
-            <h3><i class="fas fa-share-alt"></i> Share & Embed</h3>
+            <h3><i class="fas fa-share-alt" style="color: var(--accent);"></i> Share & Embed Stream</h3>
             
             <div class="player-link-grid">
                 <div class="link-item">
-                    <label>Direct Stream URL:</label>
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem; font-weight: 500;">
+                        Direct Video Stream URL:
+                    </label>
                     <div class="copy-input-group">
                         <input type="text" id="stream-url-val" value="{{ stream_url }}" readonly>
-                        <button onclick="copyElementText('stream-url-val')" class="btn btn-secondary btn-sm"><i class="fas fa-copy"></i> Copy</button>
+                        <button onclick="copyElementText('stream-url-val')" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
                     </div>
                 </div>
 
                 <div class="link-item">
-                    <label>Embed HTML Code:</label>
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem; font-weight: 500;">
+                        HTML5 Iframe Embed Code:
+                    </label>
                     <div class="copy-input-group">
                         <input type="text" id="embed-code-val" value='<iframe src="{{ embed_url }}" width="100%" height="480" frameborder="0" allowfullscreen></iframe>' readonly>
-                        <button onclick="copyElementText('embed-code-val')" class="btn btn-secondary btn-sm"><i class="fas fa-copy"></i> Copy</button>
+                        <button onclick="copyElementText('embed-code-val')" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-code"></i> Copy
+                        </button>
                     </div>
                 </div>
             </div>
@@ -53,6 +67,7 @@
     </div>
 
     <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <script src="/static/script.js"></script>
     <script>
         const player = new Plyr('#player', {
             controls: [
@@ -77,10 +92,9 @@
 
         function copyElementText(id) {
             const input = document.getElementById(id);
-            input.select();
-            input.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(input.value);
-            alert("Copied to clipboard!");
+            if (input) {
+                copyRawText(input.value);
+            }
         }
     </script>
 </body>
